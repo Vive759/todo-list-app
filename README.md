@@ -2,7 +2,7 @@
 
 A clean, responsive to-do list application built with HTML, CSS, and JavaScript.
 
-## Features
+## Featuress
 
 - ✅ Add new tasks
 - ✅ Mark tasks as complete/incomplete
