@@ -2,15 +2,16 @@ pipeline {
     agent any
     
     triggers {
-        // Will be triggered by GitHub webhook
+        pollSCM('* * * * *')  // Poll every minute - GUARANTEED TO WORK
     }
     
     stages {
-        stage('GitHub Webhook Triggered') {
+        stage('Checkout') {
             steps {
-                echo "🚀 AUTOMATICALLY TRIGGERED BY GIT PUSH!"
-                echo "⏰ Time: ${new Date()}"
+                echo "🚀 JENKINS JOB STARTED!"
+                echo "📅 Started at: ${new Date()}"
                 
+                // Simple checkout
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
@@ -19,61 +20,45 @@ pipeline {
                     ]]
                 ])
                 
-                script {
-                    // Get commit info
-                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
-                    def commitAuthor = sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
-                    def commitDate = sh(script: 'git log -1 --pretty=%ad --date=format:"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
-                    
-                    // Get changed files
-                    def changedFiles = sh(script: 'git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "First commit or no changes"', returnStdout: true).trim()
-                    
-                    echo ""
-                    echo "📊 COMMIT INFORMATION:"
-                    echo "========================"
-                    echo "📝 Hash: ${commitHash}"
-                    echo "👤 Author: ${commitAuthor}"
-                    echo "📅 Date: ${commitDate}"
-                    echo "💬 Message: ${commitMsg}"
-                    
-                    if (changedFiles && changedFiles != "First commit or no changes") {
-                        echo ""
-                        echo "📁 CHANGED FILES:"
-                        echo "=================="
-                        changedFiles.split('\n').each { file ->
-                            echo "• ${file}"
-                        }
-                    }
-                    
-                    currentBuild.displayName = "Build #${BUILD_NUMBER} - ${commitHash}"
-                    currentBuild.description = "${commitMsg}"
-                }
+                // Show basic info
+                sh '''
+                    echo "✅ Checkout successful"
+                    echo "📁 Current directory: $(pwd)"
+                    echo "📝 Latest commit: $(git log -1 --pretty=format:"%h - %s")"
+                    echo "👤 Author: $(git log -1 --pretty=format:"%an")"
+                    ls -la
+                '''
             }
         }
         
-        stage('Build Process') {
+        stage('Build') {
             steps {
-                echo "🔨 Building application..."
-                sh 'echo "Build would run here"'
-                sh 'ls -la'
+                echo "🔨 Build stage"
+                sh '''
+                    echo "Build would run here"
+                    echo "Files in workspace:"
+                    find . -type f -name "*.md" -o -name "*.txt" -o -name "*.py" -o -name "*.js" | head -10
+                '''
             }
         }
         
         stage('Complete') {
             steps {
-                echo "✅ CI/CD Pipeline Completed!"
-                echo "📤 Push more changes to trigger again"
+                echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
+                echo "🎉 Jenkins is working!"
             }
         }
     }
     
     post {
+        always {
+            echo "🏁 Build ${currentBuild.currentResult} - #${BUILD_NUMBER}"
+        }
         success {
-            echo "🎉 SUCCESS! Jenkins automatically triggered by git push!"
+            echo "🎊 SUCCESS! Everything works!"
         }
         failure {
-            echo "❌ Build failed"
+            echo "❌ Build failed - check errors above"
         }
     }
 }
