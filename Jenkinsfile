@@ -2,16 +2,15 @@ pipeline {
     agent any
     
     triggers {
-        pollSCM('* * * * *')  // Poll every minute - GUARANTEED TO WORK
+        pollSCM('* * * * *')
     }
     
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                echo "🚀 JENKINS JOB STARTED!"
-                echo "📅 Started at: ${new Date()}"
+                echo '🚀 Jenkins Pipeline Started'
+                echo '📅 Time: ' + new Date()
                 
-                // Simple checkout
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
@@ -20,45 +19,39 @@ pipeline {
                     ]]
                 ])
                 
-                // Show basic info
-                sh '''
-                    echo "✅ Checkout successful"
-                    echo "📁 Current directory: $(pwd)"
-                    echo "📝 Latest commit: $(git log -1 --pretty=format:"%h - %s")"
-                    echo "👤 Author: $(git log -1 --pretty=format:"%an")"
-                    ls -la
-                '''
+                script {
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    
+                    echo '📝 Latest Commit: ' + commitHash
+                    echo '💬 Commit Message: ' + commitMsg
+                    echo '👤 Author: ' + sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
+                }
             }
         }
         
         stage('Build') {
             steps {
-                echo "🔨 Build stage"
+                echo '🔨 Build Stage'
                 sh '''
-                    echo "Build would run here"
-                    echo "Files in workspace:"
-                    find . -type f -name "*.md" -o -name "*.txt" -o -name "*.py" -o -name "*.js" | head -10
+                    echo "Build process would run here"
+                    echo "Listing files:"
+                    ls -la
                 '''
             }
         }
         
         stage('Complete') {
             steps {
-                echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
-                echo "🎉 Jenkins is working!"
+                echo '✅ Pipeline Completed Successfully'
+                echo '🎉 Jenkins is working correctly!'
             }
         }
     }
     
     post {
         always {
-            echo "🏁 Build ${currentBuild.currentResult} - #${BUILD_NUMBER}"
-        }
-        success {
-            echo "🎊 SUCCESS! Everything works!"
-        }
-        failure {
-            echo "❌ Build failed - check errors above"
+            echo '🏁 Build finished: ' + currentBuild.currentResult
         }
     }
 }
